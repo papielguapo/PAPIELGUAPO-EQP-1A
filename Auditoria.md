@@ -1,6 +1,12 @@
-# Auditoría — EQP-1A 1.2.1
+# Auditoría — EQP-1A 1.3.0
 
 15 de noviembre de 2026. Revisión funcional, numérica y comparación de audio contra UADx EQP-1A 1.2.16 instalado localmente.
+
+## Escala y edición numérica
+
+Panel base 1634 × 252, límites 817 × 126 y 4085 × 630, proporción fija igual a FET 67 y reapertura en tamaño mínimo. Se conservan dos filas de controles y Output después de FIX.
+
+La edición por doble clic se verifica tanto en mandos como en sus etiquetas de valor, comprobando el valor recibido por el procesador. Se prueban coma decimal, Hz/kHz/dB, paso cercano en selectores, límites, texto inválido y cancelación. No se utiliza el doble clic para restablecer valores.
 
 ## Output después de FIX
 
@@ -49,9 +55,9 @@ Los pasos extra no existentes en UADx son aproximaciones. No se ha validado cada
 
 ## Evidencia
 
-- Validation/DSP-1.2.1.txt
+- Validation/DSP-1.3.0.txt
 - Validation/Math-1.2.0.txt
-- Validation/pluginval-1.2.1.txt
+- Validation/pluginval-1.3.0.txt
 - Reference/Compiled-comparison.json
 - Reference/Comparacion-UADx-v1.2.png
 - Reference/Interaction-fit.json

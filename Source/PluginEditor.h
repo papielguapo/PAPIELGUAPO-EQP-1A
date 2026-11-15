@@ -2,13 +2,21 @@
 #include "PluginProcessor.h"
 #include <juce_gui_basics/juce_gui_basics.h>
 
-inline constexpr int kBaseWidth = 1334, kBaseHeight = 340;
+inline constexpr int kBaseWidth = 1634, kBaseHeight = 252;
 
 class EQP1ALookAndFeel final : public juce::LookAndFeel_V4
 {
 public:
     void drawRotarySlider(juce::Graphics&, int, int, int, int, float, float, float, juce::Slider&) override;
+    juce::Label* createSliderTextBox(juce::Slider&) override;
+    juce::Slider::SliderLayout getSliderLayout(juce::Slider&) override;
     void drawToggleButton(juce::Graphics&, juce::ToggleButton&, bool, bool) override;
+};
+
+class EditableKnob final : public juce::Slider
+{
+public:
+    void mouseDoubleClick(const juce::MouseEvent&) override { showTextBox(); }
 };
 
 class FaceplateComponent final : public juce::Component, private juce::Timer
@@ -23,7 +31,7 @@ private:
 
     EQP1AProcessor& processor;
     EQP1ALookAndFeel look;
-    std::array<juce::Slider,9> knobs;
+    std::array<EditableKnob,9> knobs;
     std::array<juce::ToggleButton,2> switches;
     using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
     using BA = juce::AudioProcessorValueTreeState::ButtonAttachment;

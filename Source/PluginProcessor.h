@@ -31,7 +31,7 @@ public:
     void setStateInformation(const void*, int) override;
     static juce::AudioProcessorValueTreeState::ParameterLayout makeParameters();
     juce::AudioProcessorValueTreeState apvts;
-    std::atomic<int> editorWidth { 1334 }, editorHeight { 340 };
+    std::atomic<int> editorWidth { 1634 }, editorHeight { 252 };
 private:
     struct Filter {
         double b0=1,b1=0,b2=0,a1=0,a2=0,z1=0,z2=0;

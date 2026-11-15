@@ -1,10 +1,10 @@
 # EQP-1A — Papielguapo
 
-**v1.2.1 · Windows x64 · VST3 y standalone · motor limpio e independiente**
+**v1.3.0 · Windows x64 · VST3 y standalone · motor limpio e independiente**
 
 ![EQP-1A](Preview.png)
 
-Ecualizador inspirado en EQP-1A, con skin de aluminio y mandos violeta de VCA SSL/FET 67. Cinco controles arriba y cuatro abajo, incluyendo Output como en el EQP-1A. Sin medidor. Abre siempre al 70 % (934 × 238).
+Ecualizador inspirado en EQP-1A, con skin de aluminio y mandos violeta de VCA SSL/FET 67. Cinco controles arriba y cuatro abajo, incluyendo Output como en el EQP-1A. Sin medidor. Formato y límites como FET 67: base 1634 × 252; escalable de 817 × 126 a 4085 × 630. Abre siempre pequeño, a 817 × 126.
 
 ## Controles
 
@@ -16,7 +16,11 @@ Ecualizador inspirado en EQP-1A, con skin de aluminio y mandos violeta de VCA SS
 - FIX: igualación RMS enlazada en estéreo, activada inicialmente. Apágalo para comparar la ganancia absoluta contra UADx.
 - Power: bypass con transición suave y retardo compensado.
 
-Arrastra o usa la rueda; doble clic restaura el valor inicial. Escalas 0–10 de intensidad, no dB. Mono/estéreo, automatización y recuperación de ajustes. FIX mide aproximadamente 300 ms y suaviza la ganancia 150 ms, limitado a ±36 dB: iguala RMS tras estabilizarse, no los picos.
+Arrastra o usa la rueda. Haz doble clic en un mando o en su valor para escribirlo; Enter o salir del campo aplica el cambio y Escape lo cancela. Se aceptan decimales con punto o coma y unidades Hz/kHz/dB. Los selectores eligen el paso disponible más cercano; las cantidades se limitan a su rango. Escalas 0–10 de intensidad, no dB. Mono/estéreo, automatización y recuperación de ajustes. FIX mide aproximadamente 300 ms y suaviza la ganancia 150 ms, limitado a ±36 dB: iguala RMS tras estabilizarse, no los picos.
+
+## Mejoras de v1.3.0
+
+Mismas dimensiones y rango de escala que FET 67, conservando dos filas, mandos circulares y apertura pequeña. Todos los valores permiten edición numérica por doble clic.
 
 ## Mejoras de v1.2.1
 
