@@ -1,0 +1,5 @@
+PASS DSP, bandwidth, RMS match and all high steps at 44100 Hz
+PASS DSP, bandwidth, RMS match and all high steps at 48000 Hz
+PASS DSP, bandwidth, RMS match and all high steps at 96000 Hz
+PASS DSP, bandwidth, RMS match and all high steps at 192000 Hz
+PASS selectors, no output knob, small reopen, state recall and editor render

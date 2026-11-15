@@ -1,0 +1,5 @@
+PASS DSP at 44100 Hz
+PASS DSP at 48000 Hz
+PASS DSP at 96000 Hz
+PASS DSP at 192000 Hz
+PASS state recall and editor render
