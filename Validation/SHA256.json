@@ -1,10 +1,10 @@
 [
   {
-    "Hash": "2452008EBBEC98CF8159E71006ACB8E487D6B2FF0D74E03593855227B649BCF1",
-    "Path": "C:\\Users\\anton\\Documents\\Codex\\2026-11-15\\en-x20\\outputs\\EQP-1A\\Binaries\\EQP-1A.exe"
+    "file": "EQP-1A.exe",
+    "sha256": "2452008EBBEC98CF8159E71006ACB8E487D6B2FF0D74E03593855227B649BCF1"
   },
   {
-    "Hash": "E5CAF5B5BA8EBC63ED3AD4E1CCB16ED8CCB7E35DAB20647384AE2B31EB7C0A82",
-    "Path": "C:\\Users\\anton\\Documents\\Codex\\2026-11-15\\en-x20\\outputs\\EQP-1A\\Binaries\\EQP-1A.vst3\\Contents\\x86_64-win\\EQP-1A.vst3"
+    "file": "EQP-1A.vst3/Contents/x86_64-win/EQP-1A.vst3",
+    "sha256": "E5CAF5B5BA8EBC63ED3AD4E1CCB16ED8CCB7E35DAB20647384AE2B31EB7C0A82"
   }
 ]
