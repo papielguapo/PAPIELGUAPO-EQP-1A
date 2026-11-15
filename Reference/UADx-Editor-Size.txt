@@ -1,0 +1,7 @@
+Reference: installed UADx Pultec EQP-1A EQ 1.2.16
+Method: instantiate VST3, create hidden editor, pump message loop for 2500 ms, read editor bounds.
+Initial: 712 x 225
+Stabilized: 713 x 225
+Observed reference canResize: false
+EQP-1A uses the stabilized aspect ratio with custom resizing enabled.
+Compact opening: 428 x 135; minimum: 356 x 112; maximum: 2852 x 900.

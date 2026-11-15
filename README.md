@@ -1,10 +1,10 @@
 # EQP-1A — Papielguapo
 
-**v1.3.0 · Windows x64 · VST3 y standalone · motor limpio e independiente**
+**v1.3.1 · Windows x64 · VST3 y standalone · motor limpio e independiente**
 
 ![EQP-1A](Preview.png)
 
-Ecualizador inspirado en EQP-1A, con skin de aluminio y mandos violeta de VCA SSL/FET 67. Cinco controles arriba y cuatro abajo, incluyendo Output como en el EQP-1A. Sin medidor. Formato y límites como FET 67: base 1634 × 252; escalable de 817 × 126 a 4085 × 630. Abre siempre pequeño, a 817 × 126.
+Ecualizador inspirado en EQP-1A, con skin de aluminio y mandos violeta de VCA SSL/FET 67. Cinco controles arriba y cuatro abajo, incluyendo Output como en el EQP-1A. Sin medidor. Proporción tomada del editor UADx instalado: 713 × 225. Abre siempre compacto a 428 × 135 y permite reducir a 356 × 112 o ampliar hasta 2852 × 900. Mantiene mandos circulares y dos filas.
 
 ## Controles
 
@@ -18,9 +18,9 @@ Ecualizador inspirado en EQP-1A, con skin de aluminio y mandos violeta de VCA SS
 
 Arrastra o usa la rueda. Haz doble clic en un mando o en su valor para escribirlo; Enter o salir del campo aplica el cambio y Escape lo cancela. Se aceptan decimales con punto o coma y unidades Hz/kHz/dB. Los selectores eligen el paso disponible más cercano; las cantidades se limitan a su rango. Escalas 0–10 de intensidad, no dB. Mono/estéreo, automatización y recuperación de ajustes. FIX mide aproximadamente 300 ms y suaviza la ganancia 150 ms, limitado a ±36 dB: iguala RMS tras estabilizarse, no los picos.
 
-## Mejoras de v1.3.0
+## Mejoras de v1.3.1
 
-Mismas dimensiones y rango de escala que FET 67, conservando dos filas, mandos circulares y apertura pequeña. Todos los valores permiten edición numérica por doble clic.
+Proporción del UADx EQP-1A, medida directamente en el plugin instalado, con apertura pequeña y un amplio rango de escala. Todos los valores conservan la edición numérica por doble clic. Enter aplica y Escape cancela.
 
 ## Mejoras de v1.2.1
 
