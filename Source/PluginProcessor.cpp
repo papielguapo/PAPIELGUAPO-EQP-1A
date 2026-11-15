@@ -15,7 +15,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout EQP1AProcessor::makeParamete
 
  p.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"fix",1},"FIX Auto Level",true));
  p.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"power",1},"Power",true));
- p.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"bypass",1},"Bypass",false));return p;
+ p.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{"bypass",1},"Bypass",false));f("output","Output",-12,12,0);return p;
 }
 EQP1AProcessor::EQP1AProcessor():AudioProcessor(BusesProperties().withInput("Input",juce::AudioChannelSet::stereo(),true).withOutput("Output",juce::AudioChannelSet::stereo(),true)),apvts(*this,nullptr,"EQP1A",makeParameters()){}
 static const char* ids[]={"lowBoost","lowAtten","lowFreq","bandwidth","highBoost","highFreq","highAtten","attenFreq"};
@@ -50,6 +50,7 @@ void EQP1AProcessor::prepareToPlay(double sr,int) {
     for(size_t i=0;i<smooth.size();++i){smooth[i].reset(sr,.035);smooth[i].setCurrentAndTargetValue(apvts.getRawParameterValue(ids[i])->load());}
     fixBlend.reset(sr,.035);fixBlend.setCurrentAndTargetValue(apvts.getRawParameterValue("fix")->load()>.5f?1.f:0.f);
     active.reset(sr,.015);active.setCurrentAndTargetValue(apvts.getRawParameterValue("power")->load()>.5f && apvts.getRawParameterValue("bypass")->load()<.5f?1.f:0.f);
+    outputGain.reset(sr,.035);outputGain.setCurrentAndTargetValue(juce::Decibels::decibelsToGain(apvts.getRawParameterValue("output")->load()));
     reset();update();
 }
 void EQP1AProcessor::reset() {
@@ -131,6 +132,7 @@ void EQP1AProcessor::processAudio(juce::AudioBuffer<float>& b,bool forcedBypass)
     for(int c=getTotalNumInputChannels();c<b.getNumChannels();++c)b.clear(c,0,b.getNumSamples());
     bool moving=false;
     for(size_t i=0;i<smooth.size();++i){smooth[i].setTargetValue(apvts.getRawParameterValue(ids[i])->load());moving=moving||smooth[i].isSmoothing();}
+    outputGain.setTargetValue(juce::Decibels::decibelsToGain(apvts.getRawParameterValue("output")->load()));
     fixBlend.setTargetValue(apvts.getRawParameterValue("fix")->load()>.5f?1.f:0.f);
     active.setTargetValue(!forcedBypass && apvts.getRawParameterValue("power")->load()>.5f && apvts.getRawParameterValue("bypass")->load()<.5f?1.f:0.f);
     const auto& data=EQPCalibration::rates[calibrationIndex];
@@ -151,7 +153,8 @@ void EQP1AProcessor::processAudio(juce::AudioBuffer<float>& b,bool forcedBypass)
         inputEnergy=energyPole*inputEnergy+(1-energyPole)*inPower;outputEnergy=energyPole*outputEnergy+(1-energyPole)*outPower;
         double target=matchGain;if(inputEnergy>1e-12&&outputEnergy>1e-16)target=juce::jlimit(.0158489319,63.09573445,std::sqrt(inputEnergy/outputEnergy));
         matchGain=gainPole*matchGain+(1-gainPole)*target;double compensation=1+fixBlend.getNextValue()*(matchGain-1);
-        for(int c=0;c<channels;++c)b.setSample(c,i,float(dry[c]+wet*(equalized[c]*compensation-dry[c])));
+        const double postFixGain=outputGain.getNextValue();
+        for(int c=0;c<channels;++c)b.setSample(c,i,float(dry[c]+wet*(equalized[c]*compensation*postFixGain-dry[c])));
     }
     if(moving)update();
 }

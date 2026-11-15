@@ -1,0 +1,7 @@
+PASS DSP, bandwidth, RMS match and all high steps at 44100 Hz
+PASS DSP, bandwidth, RMS match and all high steps at 48000 Hz
+PASS DSP, bandwidth, RMS match and all high steps at 96000 Hz
+PASS DSP, bandwidth, RMS match and all high steps at 192000 Hz
+PASS clean linear scaling and digital silence
+PASS OUTPUT after FIX: +6/-6 dB, FIX off, bypass and state
+PASS selectors, output knob, small reopen, state recall and editor render

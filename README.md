@@ -1,10 +1,10 @@
 # EQP-1A — Papielguapo
 
-**v1.2.0 · Windows x64 · VST3 y standalone · motor limpio e independiente**
+**v1.2.1 · Windows x64 · VST3 y standalone · motor limpio e independiente**
 
 ![EQP-1A](Preview.png)
 
-Ecualizador inspirado en EQP-1A, con skin de aluminio y mandos violeta de VCA SSL/FET 67. Cinco controles arriba y tres abajo como en el EQP-1A. Sin medidor ni mando Output. Abre siempre al 70 % (934 × 238).
+Ecualizador inspirado en EQP-1A, con skin de aluminio y mandos violeta de VCA SSL/FET 67. Cinco controles arriba y cuatro abajo, incluyendo Output como en el EQP-1A. Sin medidor. Abre siempre al 70 % (934 × 238).
 
 ## Controles
 
@@ -12,16 +12,21 @@ Ecualizador inspirado en EQP-1A, con skin de aluminio y mandos violeta de VCA SS
 - Agudos: 1–20 kHz en pasos de 1 kHz, más 30 y 40 kHz.
 - Bandwidth: Sharp a Broad; afecta la anchura y la altura del realce.
 - Atten Sel: 5, 10 o 20 kHz.
+- Output: ganancia final de −12 a +12 dB después de FIX. FIX no contrarresta el ajuste de Output.
 - FIX: igualación RMS enlazada en estéreo, activada inicialmente. Apágalo para comparar la ganancia absoluta contra UADx.
 - Power: bypass con transición suave y retardo compensado.
 
 Arrastra o usa la rueda; doble clic restaura el valor inicial. Escalas 0–10 de intensidad, no dB. Mono/estéreo, automatización y recuperación de ajustes. FIX mide aproximadamente 300 ms y suaviza la ganancia 150 ms, limitado a ±36 dB: iguala RMS tras estabilizarse, no los picos.
 
-## Mejoras de v1.2
+## Mejoras de v1.2.1
+
+Perilla Output añadida después de la igualación FIX, con suavizado de 35 ms, valor inicial 0 dB, automatización y recuperación de estado. Power desconecta también esta ganancia. Con Output a 0 dB se conserva el motor y la calibración de v1.2.0.
+
+## Mejoras del motor v1.2
 
 Modelo conjunto para Boost/Atten de agudos y corrección de la carga entre atenuación de graves y agudos, a partir de 3075 medidas adicionales del UADx instalado. Diseño mediante secciones estables, con comprobación numérica y transición gradual. Se conservan las curvas aisladas de v1.1. Sin ruido, saturación ni dependencia del plugin UADx para funcionar.
 
-Comparación de los VST3 compilados contra UADx 1.2.16, con FIX apagado, en 20 Hz–20 kHz a 44,1/48/96/192 kHz:
+Comparación de los VST3 compilados contra UADx 1.2.16, con FIX apagado y Output a 0 dB, en 20 Hz–20 kHz a 44,1/48/96/192 kHz:
 
 | Lote | Casos | Máximo observado v1.1 | Máximo observado v1.2 |
 |---|---:|---:|---:|

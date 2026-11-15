@@ -61,7 +61,7 @@ private:
     std::array<std::array<Filter,31>,2> interactionFilters;
     double interactionGain=1;
     std::array<juce::SmoothedValue<float>,8> smooth;
-    juce::SmoothedValue<float> active,fixBlend;
+    juce::SmoothedValue<float> active,fixBlend,outputGain;
     std::array<std::array<double,256>,2> colourHistory{},dryHistory{};
     std::array<double,2> hpInput{},hpOutput{};
     int calibrationIndex=1,historyIndex=0;

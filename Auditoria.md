@@ -1,6 +1,12 @@
-# Auditoría — EQP-1A 1.2.0
+# Auditoría — EQP-1A 1.2.1
 
 15 de noviembre de 2026. Revisión funcional, numérica y comparación de audio contra UADx EQP-1A 1.2.16 instalado localmente.
+
+## Output después de FIX
+
+Se añade un parámetro de −12 a +12 dB, inicial 0 dB, al final de la lista para conservar los índices de los parámetros anteriores. Se aplica después de la ganancia calculada por FIX y queda fuera de su medición. Transición de 35 ms, automatización y recuperación de estado. Power/bypass desconecta la ganancia manual.
+
+La comprobación mide +6 y −6 dB con FIX activado, +6 dB con FIX desactivado, bypass a nivel unidad y recuperación del valor. Las comparaciones de curvas siguientes corresponden al motor v1.2.0 y se conservan con Output a 0 dB.
 
 ## Resultado
 
@@ -31,8 +37,8 @@ La interacción amplia entre atenuaciones se corrige mediante secciones de Q fij
 - Linealidad al doblar la entrada con FIX apagado; silencio digital sin ruido generado.
 - Automatización, estado, buses y editor: pluginval nivel 5 SUCCESS.
 - Factorización numérica: 6300 diseños calibrados comprobados, cero fallos. Error relativo máximo de reconstrucción 2,1 × 10⁻¹¹ en las frecuencias de prueba.
-- Selectores ampliados, ausencia de Output/medidor y apertura/reapertura pequeña.
-- Interfaz conservada: cinco controles arriba y tres abajo, ATTEN SEL arriba.
+- Selectores ampliados, Output después de FIX, ausencia de medidor y apertura/reapertura pequeña.
+- Interfaz conservada: cinco controles arriba y cuatro abajo, incluyendo Output, ATTEN SEL arriba.
 - Procesamiento con memoria preasignada; sin acceso a disco o red en el audio.
 
 ## Límites pendientes
@@ -43,9 +49,9 @@ Los pasos extra no existentes en UADx son aproximaciones. No se ha validado cada
 
 ## Evidencia
 
-- Validation/DSP-1.2.0.txt
+- Validation/DSP-1.2.1.txt
 - Validation/Math-1.2.0.txt
-- Validation/pluginval-1.2.0.txt
+- Validation/pluginval-1.2.1.txt
 - Reference/Compiled-comparison.json
 - Reference/Comparacion-UADx-v1.2.png
 - Reference/Interaction-fit.json

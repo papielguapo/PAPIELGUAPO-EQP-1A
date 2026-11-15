@@ -101,12 +101,12 @@ void EQP1ALookAndFeel::drawToggleButton(juce::Graphics& g, juce::ToggleButton& b
     if(hover||down||b.hasKeyboardFocus(true)){g.setColour(colour(0xffb84dff).withAlpha(0.65f));g.drawEllipse(bx-15,c.y-15,30,30,1);}
 }
 
-static constexpr int xs[]={360,510,435,610,710,785,860,1010};
-static constexpr int ys[]={105,105,245,245,105,245,105,105};
+static constexpr int xs[]={360,510,435,610,710,785,860,1010,1010};
+static constexpr int ys[]={105,105,245,245,105,245,105,105,245};
 FaceplateComponent::FaceplateComponent(EQP1AProcessor& p):processor(p){setLookAndFeel(&look);
- const char* names[]={"Low Boost","Low Attenuation","Low Frequency","Bandwidth","High Boost","High Frequency","High Attenuation","Attenuation Frequency"};
- const char* params[]={"lowBoost","lowAtten","lowFreq","bandwidth","highBoost","highFreq","highAtten","attenFreq"};
- for(size_t i=0;i<knobs.size();++i){auto& s=knobs[i];addAndMakeVisible(s);s.setName(names[i]);s.setTitle(names[i]);s.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);s.setTextBoxStyle(juce::Slider::NoTextBox,false,0,0);s.setRotaryParameters(juce::MathConstants<float>::pi*7/6,juce::MathConstants<float>::pi*17/6,true);s.setPopupDisplayEnabled(true,true,this);s.setDoubleClickReturnValue(true,i==2?4:i==3?5:i==5?7:i==7?1:0);
+ const char* names[]={"Low Boost","Low Attenuation","Low Frequency","Bandwidth","High Boost","High Frequency","High Attenuation","Attenuation Frequency","Output"};
+ const char* params[]={"lowBoost","lowAtten","lowFreq","bandwidth","highBoost","highFreq","highAtten","attenFreq","output"};
+ for(size_t i=0;i<knobs.size();++i){auto& s=knobs[i];addAndMakeVisible(s);s.setName(names[i]);s.setTitle(names[i]);if(i==8)s.setTooltip("Output after FIX: final level -12 to +12 dB");s.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);s.setTextBoxStyle(juce::Slider::NoTextBox,false,0,0);s.setRotaryParameters(juce::MathConstants<float>::pi*7/6,juce::MathConstants<float>::pi*17/6,true);s.setPopupDisplayEnabled(true,true,this);s.setDoubleClickReturnValue(true,i==2?4:i==3?5:i==5?7:i==7?1:0);
  s.textFromValueFunction=[i](double v){int n=juce::roundToInt(v);if(i==2){return juce::String(20+10*juce::jlimit(0,8,n))+" Hz";}if(i==5){n=juce::jlimit(0,21,n);return juce::String(n<20?n+1:n==20?30:40)+" kHz";}if(i==7){const char* a[]={"5 kHz","10 kHz","20 kHz"};return juce::String(a[juce::jlimit(0,2,n)]);}return juce::String(v,1)+(i==8?" dB":"");};
  knobAttachments[i]=std::make_unique<SA>(processor.apvts,params[i],s);}
  addAndMakeVisible(switches[0]);switches[0].setName("Power");switches[0].getProperties().set("reverse",true);switchAttachments[0]=std::make_unique<BA>(processor.apvts,"power",switches[0]);addAndMakeVisible(switches[1]);switches[1].setName("FIX");switches[1].setTooltip("FIX: match output RMS to input level");switches[1].getProperties().set("reverse",true);switchAttachments[1]=std::make_unique<BA>(processor.apvts,"fix",switches[1]);startTimerHz(15);}
@@ -146,16 +146,16 @@ void FaceplateComponent::paint(juce::Graphics& g){
 
  g.setColour(colour(0xff15191b));text(g,"EQP-1A",66,150,100,25,19);text(g,"PROGRAM EQ",66,181,100,15,10);
  lamp(g,{206,70,60,60},processor.apvts.getRawParameterValue("power")->load()>.5f);g.setColour(colour(0xff15191b));text(g,"POWER",194,145,80,22,14);text(g,"ON",174,200,35,15,11);text(g,"OFF",258,200,35,15,11);
- const char* titles[]={"BOOST","ATTEN","LOW FREQ / Hz","BANDWIDTH","BOOST","HIGH FREQ / kHz","ATTEN","ATTEN SEL / kHz"};
- for(int i=0;i<8;++i){float cx=float(xs[i]),cy=float(ys[i]);int steps=i==2?8:i==5?21:i==7?2:5;
+ const char* titles[]={"BOOST","ATTEN","LOW FREQ / Hz","BANDWIDTH","BOOST","HIGH FREQ / kHz","ATTEN","ATTEN SEL / kHz","OUTPUT / dB"};
+ for(int i=0;i<9;++i){float cx=float(xs[i]),cy=float(ys[i]);int steps=i==2?8:i==5?21:i==7?2:i==8?4:5;
  for(int t=0;t<=steps;++t){float a=juce::MathConstants<float>::pi*(7.f/6.f+5.f/3.f*float(t)/float(steps));float dx=std::sin(a),dy=-std::cos(a);g.setColour(colour(0xff22292b));g.fillEllipse(cx+dx*43-1.5f,cy+dy*43-1.5f,3,3);juce::String s;
- if(i==2){if(t%2==0)s=juce::String(20+10*t);}else if(i==5){if(t==0||t==4||t==9||t==14||t==21)s=juce::String(t<20?t+1:40);}else if(i==7){const char* z[]={"5","10","20"};s=z[t];}else if(i==8)s=juce::String(-18+t*7.2,0);else s=juce::String(t*2);if(i==3&&(t==0||t==steps))s=t==0?"SHARP":"BROAD";
+ if(i==2){if(t%2==0)s=juce::String(20+10*t);}else if(i==5){if(t==0||t==4||t==9||t==14||t==21)s=juce::String(t<20?t+1:40);}else if(i==7){const char* z[]={"5","10","20"};s=z[t];}else if(i==8){int gain=-12+t*6;s=(gain>0?"+":"")+juce::String(gain);}else s=juce::String(t*2);if(i==3&&(t==0||t==steps))s=t==0?"SHARP":"BROAD";
  text(g,s,cx+dx*57-22,cy+dy*57-7,44,14,(i==3&&(t==0||t==steps))?8.0f:10.0f);}
  text(g,titles[i],cx-65,ys[i]<150?18.0f:cy+67.0f,130,18,11);
  }
  g.setColour(colour(0xff353b3e));
 
- for(int i : {2,5,7}) { auto value=knobs[size_t(i)].getTextFromValue(knobs[size_t(i)].getValue());text(g,value,float(xs[i]-35),float(ys[i]+46),70,15,10); }
+ for(int i : {2,5,7,8}) { auto value=knobs[size_t(i)].getTextFromValue(knobs[size_t(i)].getValue());text(g,value,float(xs[i]-35),float(ys[i]+46),70,15,10); }
  g.setColour(colour(0xff15191b));text(g,"ON",1138,240,30,15,10);text(g,"OFF",1218,240,35,15,10);text(g,"FIX",1152,276,85,18,12);
     // Hand-drawn vector script, independent of installed fonts.
     juce::Path signature;

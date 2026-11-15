@@ -23,11 +23,11 @@ private:
 
     EQP1AProcessor& processor;
     EQP1ALookAndFeel look;
-    std::array<juce::Slider,8> knobs;
+    std::array<juce::Slider,9> knobs;
     std::array<juce::ToggleButton,2> switches;
     using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
     using BA = juce::AudioProcessorValueTreeState::ButtonAttachment;
-    std::array<std::unique_ptr<SA>,8> knobAttachments;
+    std::array<std::unique_ptr<SA>,9> knobAttachments;
     std::array<std::unique_ptr<BA>,2> switchAttachments;
     float shownGr = 0, shownOut = -100;
     juce::TooltipWindow tooltips { this, 500 };
