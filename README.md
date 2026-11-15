@@ -1,4 +1,4 @@
-# EQP-1A — Papielguapo
+# PAPIELGUAPO - EQP-1A
 
 **v1.4.0 · Windows x64 · VST3 y standalone · motor independiente con color sutil**
 
@@ -68,3 +68,5 @@ ctest --test-dir build -C Release --output-on-failure
 ```
 
 Código AGPL-3.0. Dependencias bajo sus propias licencias. Implementación independiente, sin código ni binarios de UAD. Referencia de controles: [manual de Universal Audio](https://help.uaudio.com/hc/en-us/articles/7183176266260-Pultec-Passive-EQ-Collection-Manual).
+
+Archivos distribuidos: `PAPIELGUAPO - EQP-1A.vst3` y `PAPIELGUAPO - EQP-1A.exe`. Se conserva la identidad interna del plugin para compatibilidad con sesiones.
