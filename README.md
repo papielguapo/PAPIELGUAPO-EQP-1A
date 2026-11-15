@@ -1,44 +1,50 @@
 # EQP-1A — Papielguapo
 
-Ecualizador inspirado en Pultec EQP-1A, con la estética de VCA SSL y FET 67. Windows x64: **VST3 y standalone**.
+**v1.2.0 · Windows x64 · VST3 y standalone · motor limpio e independiente**
 
 ![EQP-1A](Preview.png)
 
-Versión 1.1.0: controles recolocados como el EQP-1A y curvas lineales recalibradas contra el UADx instalado. **No es una equivalencia 1:1 completa**: consultar [mediciones y límites](Reference/Calibration.md).
+Ecualizador inspirado en EQP-1A, con skin de aluminio y mandos violeta de VCA SSL/FET 67. Cinco controles arriba y tres abajo como en el EQP-1A. Sin medidor ni mando Output. Abre siempre al 70 % (934 × 238).
 
-## Interfaz y controles
+## Controles
 
-Panel de aluminio cepillado y mandos violeta en dos filas (cinco arriba y tres abajo), sin medidor ni mando Output. Se abre siempre al 70 % (934 × 238), aunque se haya redimensionado antes. Se puede ampliar durante el uso.
+- Graves: 20–100 Hz en pasos de 10 Hz, con Boost y Atten independientes.
+- Agudos: 1–20 kHz en pasos de 1 kHz, más 30 y 40 kHz.
+- Bandwidth: Sharp a Broad; afecta la anchura y la altura del realce.
+- Atten Sel: 5, 10 o 20 kHz.
+- FIX: igualación RMS enlazada en estéreo, activada inicialmente. Apágalo para comparar la ganancia absoluta contra UADx.
+- Power: bypass con transición suave y retardo compensado.
 
-- Low Frequency: 20, 30, 40, 50, 60, 70, 80, 90 y 100 Hz.
-- High Frequency: 1–20 kHz en pasos de 1 kHz, más 30 y 40 kHz.
-- Boost y Atten de graves independientes: permiten realzar y atenuar simultáneamente.
-- Boost de agudos con Bandwidth: 0 = Sharp, 10 = Broad.
-- Atten de agudos con selector de 5, 10 o 20 kHz.
-- FIX: igualación automática RMS de salida respecto a entrada, enlazada en estéreo. Encendido inicialmente. Se puede apagar para conservar la ganancia propia de la EQ.
-- Power: bypass de EQ y compensación con transición suave.
+Arrastra o usa la rueda; doble clic restaura el valor inicial. Escalas 0–10 de intensidad, no dB. Mono/estéreo, automatización y recuperación de ajustes. FIX mide aproximadamente 300 ms y suaviza la ganancia 150 ms, limitado a ±36 dB: iguala RMS tras estabilizarse, no los picos.
 
-Los controles 0–10 indican intensidad, no dB. Arrastra o usa la rueda; doble clic restaura el valor inicial. Los selectores muestran siempre el valor elegido. Mono y estéreo, automatización y recuperación de ajustes del host.
+## Mejoras de v1.2
 
-FIX usa medición RMS de aproximadamente 300 ms y suavizado de ganancia de 150 ms, con compensación máxima de ±36 dB. Iguala el nivel medio tras estabilizarse; no es un limitador de picos ni impone igualdad muestra a muestra. No añade ruido ni saturación; con FIX apagado el procesamiento es lineal.
+Modelo conjunto para Boost/Atten de agudos y corrección de la carga entre atenuación de graves y agudos, a partir de 3075 medidas adicionales del UADx instalado. Diseño mediante secciones estables, con comprobación numérica y transición gradual. Se conservan las curvas aisladas de v1.1. Sin ruido, saturación ni dependencia del plugin UADx para funcionar.
+
+Comparación de los VST3 compilados contra UADx 1.2.16, con FIX apagado, en 20 Hz–20 kHz a 44,1/48/96/192 kHz:
+
+| Lote | Casos | Máximo observado v1.1 | Máximo observado v1.2 |
+|---|---:|---:|---:|
+| Curvas aisladas anteriores | 164 | 0,263 dB | 0,263 dB |
+| Combinaciones anteriores | 48 | 4,479 dB | 1,079 dB |
+| Combinaciones adicionales | 160 | 20,752 dB | 1,752 dB |
+| Lote final nuevo | 96 | 22,017 dB | 7,123 dB |
+
+En las 48 combinaciones anteriores, el error RMS medio baja un 75,3 %. En el lote final nuevo baja un 73,5 %. **Todavía no es un clon 1:1**: algunas resonancias extremas siguen difiriendo y no todos los ajustes mejoran individualmente. Estas cifras corresponden a los lotes y frecuencias medidos, no son límites universales. No se han igualado fase, distorsión ni sobrecarga; el motor permanece limpio.
+
+[Auditoría](Auditoria.md) · [Mediciones completas](Reference/Compiled-comparison.json)
+
+![Comparación UADx v1.1 v1.2](Reference/Comparacion-UADx-v1.2.png)
 
 ## Instalación
 
-Descarga el ZIP de Releases, extráelo y ejecuta `Install.ps1`. Crea accesos directos en Escritorio e Inicio. El instalador intenta `C:\Program Files\Common Files\VST3`; si no dispone de permisos, usa `%LOCALAPPDATA%\Programs\Common\VST3`. El standalone se instala en `%LOCALAPPDATA%\Programs\Papielguapo\EQP-1A`.
+Extrae el ZIP de Releases y ejecuta Install.ps1. Intenta instalar en `C:\Program Files\Common Files\VST3`; si faltan permisos, usa `%LOCALAPPDATA%\Programs\Common\VST3`. El standalone se instala en `%LOCALAPPDATA%\Programs\Papielguapo\EQP-1A`, con accesos directos en Escritorio e Inicio. Añade la carpeta VST3 de usuario a las rutas del DAW si fuese necesario y vuelve a escanear.
 
-Vuelve a escanear los plugins del DAW y busca **EQP-1A / Papielguapo**. Si el DAW no explora automáticamente la carpeta VST3 del usuario, añádela a sus rutas. El standalone permite elegir entradas y salidas en las opciones de audio; usa auriculares si activas un micrófono.
+La latencia comunicada al host es 86 muestras a 44,1/48 kHz, 118 a 96 kHz y 151 a 192 kHz. El bypass mantiene el retardo. Las frecuencias extra sin posición equivalente UADx se interpolan o extrapolan; las frecuencias internas se limitan a 0,45 × sample rate. Para alcanzar 40 kHz se requiere 96 kHz o más.
 
-## Alcance de la emulación
+## Compilación
 
-DSP lineal mediante tablas empíricas de filtros estables: graves con Boost/Atten conjuntos, realce de agudos dependiente de Bandwidth y atenuación de agudos. Las ramas se combinan en cascada, por lo que algunas interacciones extremas entre bandas siguen difiriendo de UADx. No incluye código de UAD ni modelado del circuito pasivo, válvulas o transformadores. No es un producto oficial. Se compararon 220 casos del VST3 compilado: máximo 0,263 dB en las pruebas aisladas y 4,479 dB en ciertas combinaciones extremas; no se garantiza equivalencia de fase ni de sonido 1:1. Los pasos de frecuencia ampliados son una personalización.
-
-Los valores 30 y 40 kHz se pueden seleccionar; la frecuencia interna se limita a 0,45 × frecuencia de muestreo. Para procesar 40 kHz sin esa limitación se necesita trabajar a 96 kHz o más.
-
-Referencia de los controles clásicos: [manual de Universal Audio](https://help.uaudio.com/hc/en-us/articles/7183176266260-Pultec-Passive-EQ-Collection-Manual).
-
-## Compilación y auditoría
-
-CMake 3.22+, Visual Studio C++ y JUCE 9.0.5. Usa JUCE local en `C:/JUCE` o descarga automáticamente la versión fijada.
+CMake 3.22+, Visual Studio C++ y JUCE 9.0.5 local en C:/JUCE, o descargado automáticamente mediante CMake.
 
 ```powershell
 cmake -S . -B build -G "Visual Studio 18 2026"
@@ -46,6 +52,4 @@ cmake --build build --config Release --parallel 2
 ctest --test-dir build -C Release --output-on-failure
 ```
 
-La latencia declarada al DAW es de 86 muestras a 44,1/48 kHz, 118 a 96 kHz y 151 a 192 kHz.
-
-Consulta [Auditoria.md](Auditoria.md) y los informes de `Validation/`. El código de este proyecto se distribuye bajo AGPL-3.0; las dependencias mantienen sus propias licencias.
+Código AGPL-3.0. Dependencias bajo sus propias licencias. Implementación independiente, sin código ni binarios de UAD. Referencia de controles: [manual de Universal Audio](https://help.uaudio.com/hc/en-us/articles/7183176266260-Pultec-Passive-EQ-Collection-Manual).

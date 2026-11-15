@@ -1,45 +1,52 @@
-# Auditoría — EQP-1A 1.1.0
+# Auditoría — EQP-1A 1.2.0
 
-15 de noviembre de 2026. Revisión local de código, DSP, interfaz y comparación empírica con UADx Pultec EQP-1A EQ 1.2.16.
+15 de noviembre de 2026. Revisión funcional, numérica y comparación de audio contra UADx EQP-1A 1.2.16 instalado localmente.
 
 ## Resultado
 
-Las comprobaciones funcionales de DSP y pluginval nivel 5 están aprobadas. La equivalencia 1:1 completa con UADx no está conseguida: quedan diferencias en algunas combinaciones entre bandas.
+Pruebas DSP, linealidad, silencio y pluginval nivel 5 aprobadas. Mejora sustancial de las interacciones, conservando las curvas aisladas. No se declara equivalencia 1:1 completa.
 
-Se recogieron 3920 respuestas de referencia a 44,1, 48, 96 y 192 kHz. El ajuste de las ramas calibradas tiene un error máximo de 0,047 dB en la banda medida. Esa cifra no describe la respuesta combinada ni la fase.
+| Comparación | Error RMS medio v1.1 → v1.2 | Máximo observado v1.1 → v1.2 |
+|---|---:|---:|
+| 48 combinaciones anteriores | 0,439 → 0,109 dB | 4,479 → 1,079 dB |
+| 160 combinaciones adicionales | 0,591 → 0,192 dB | 20,752 → 1,752 dB |
+| 96 casos del lote final | 0,523 → 0,138 dB | 22,017 → 7,123 dB |
 
-La comparación independiente del VST3 compilado tiene 220 casos. En 164 casos aislados, el máximo es 0,263 dB y el error RMS medio es 0,051 dB. En 48 casos combinados, el máximo es 4,479 dB y el error RMS medio es 0,439 dB. Se comprobaron además ocho casos a distintos niveles. Los resultados completos están en Reference/Compiled-comparison.json y su gráfica.
+Las 164 curvas aisladas anteriores conservan un máximo de 0,263 dB. Se incluyen además ocho casos a distintos niveles. Total comparado: 476 casos de binarios VST3 compilados, a 44,1, 48, 96 y 192 kHz.
 
-## Funcionalidad comprobada
+Medición con impulso de amplitud 0,01, 65536 muestras, FIX apagado y salida UADx a 0 dB. Error de magnitud evaluado en 512 frecuencias logarítmicas de 20 Hz a 20 kHz. Se conserva y comunica la latencia. Las cifras no son una garantía para todas las posiciones, niveles o frecuencias continuas.
 
-- Mono/estéreo, parámetros y estado mediante pluginval nivel 5: SUCCESS.
-- Curva conjunta de Boost/Atten de graves contrastada con UADx, incluido el valle resonante.
-- Bandwidth modifica tanto anchura como altura de la curva de agudos.
-- FIX encendido mantiene el RMS después de estabilizarse; apagado conserva la ganancia de EQ.
-- Power conserva el paso directo con su retardo de compensación.
-- Todos los pasos de agudos producen salida finita a 44,1, 48, 96 y 192 kHz.
-- Listas exactas de nueve pasos de graves y 22 de agudos, estado y ausencia de mando Output.
-- Apertura y reapertura a 934 × 238 después de ampliar el editor.
-- Linealidad con FIX apagado y ausencia de ruido generado en silencio.
-- Captura JUCE revisada: cinco controles superiores y tres inferiores, con ATTEN SEL arriba como en EQP-1A. Sin medidor ni solapamientos observados.
+## Cambios del motor
 
-## Implementación
+3075 respuestas nuevas de interacción medidas a 48 kHz: 1500 de graves con atenuación de agudos y 1575 de Boost/Atten/Bandwidth de agudos conjuntos. Modelos derivados para las cuatro frecuencias de muestreo y comprobados contra referencias UADx en las cuatro.
 
-Filtros estables por canal con mezclas entre puntos de calibración, FIR de referencia y paso alto de 1 Hz. Sin saturación, ruido aleatorio ni modelado no lineal. La ruta de audio usa memoria preasignada y no accede a disco ni a red. FIX está enlazado en estéreo y limitado a ±36 dB.
+El modelo conjunto de agudos se factoriza en biquads después de interpolar su función de transferencia. Se comprueba la estabilidad: se rechaza un diseño inválido y se utiliza una interpolación conservadora o la ruta independiente estable. Su contribución aumenta suavemente con Boost y Atten fuertes. Las curvas aisladas mantienen su ruta anterior.
 
-Latencia comunicada al DAW: 86 muestras a 44,1/48 kHz, 118 a 96 kHz y 151 a 192 kHz. El bypass utiliza un retardo equivalente.
+La interacción amplia entre atenuaciones se corrige mediante secciones de Q fijo y ganancias calibradas. No se incluye ruido aleatorio, saturación, válvulas ni transformadores no lineales. No se carga UADx en el producto.
 
-## Límites
+## Comprobaciones
 
-El modelo en cascada no reproduce todas las interacciones de la red pasiva original. No se han igualado fase, distorsión ni sobrecarga. Las frecuencias extra sin equivalente UADx se interpolan o extrapolan. FIX iguala RMS, no picos instantáneos. No se ha comprobado cada DAW.
+- DSP a 44,1/48/96/192 kHz, todos los pasos de agudos y Bandwidth.
+- FIX RMS, bypass con retardo y coincidencia estéreo para entradas idénticas.
+- Linealidad al doblar la entrada con FIX apagado; silencio digital sin ruido generado.
+- Automatización, estado, buses y editor: pluginval nivel 5 SUCCESS.
+- Factorización numérica: 6300 diseños calibrados comprobados, cero fallos. Error relativo máximo de reconstrucción 2,1 × 10⁻¹¹ en las frecuencias de prueba.
+- Selectores ampliados, ausencia de Output/medidor y apertura/reapertura pequeña.
+- Interfaz conservada: cinco controles arriba y tres abajo, ATTEN SEL arriba.
+- Procesamiento con memoria preasignada; sin acceso a disco o red en el audio.
+
+## Límites pendientes
+
+Persisten interacciones de orden superior y diferencias de interpolación en resonancias estrechas. El lote final incluye un extremo con 7,123 dB de desviación observada a 192 kHz, frente a 8,470 dB de la versión anterior en ese mismo caso. Algunos ajustes individuales pueden empeorar pese a la mejora media. La fase, la sobrecarga y los armónicos no se han igualado. El objetivo elegido es un motor limpio e independiente.
+
+Los pasos extra no existentes en UADx son aproximaciones. No se ha validado cada DAW. Latencia: 86 muestras a 44,1/48 kHz, 118 a 96 kHz y 151 a 192 kHz.
 
 ## Evidencia
 
-- Validation/DSP-1.1.0.txt
-- Validation/pluginval-1.1.0.txt
-- Reference/Calibration.md
-- Reference/Calibration-summary.json
+- Validation/DSP-1.2.0.txt
+- Validation/Math-1.2.0.txt
+- Validation/pluginval-1.2.0.txt
 - Reference/Compiled-comparison.json
-- Reference/Comparacion-UADx.png
-- Preview.png
-- Tests/Tests.cpp
+- Reference/Comparacion-UADx-v1.2.png
+- Reference/Interaction-fit.json
+- Tests/Tests.cpp y Tests/InteractionMathTests.cpp

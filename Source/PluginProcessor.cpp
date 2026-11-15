@@ -1,6 +1,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "CalibrationData.h"
+#include "InteractionData.h"
+#include "InteractionMath.h"
 juce::AudioProcessorValueTreeState::ParameterLayout EQP1AProcessor::makeParameters(){
  juce::AudioProcessorValueTreeState::ParameterLayout p;
  auto f=[&](const char* id,const char* name,float lo,float hi,float value){p.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{id,1},name,juce::NormalisableRange<float>(lo,hi,.01f),value));};
@@ -52,45 +54,77 @@ void EQP1AProcessor::prepareToPlay(double sr,int) {
 }
 void EQP1AProcessor::reset() {
     inputEnergy=outputEnergy=0;matchGain=1;historyIndex=0;
-    lowGroup={};highGroup={};attenGroup={};
+    lowGroup={};highGroup={};legacyLow={};legacyHigh={};legacyAtten={};highBlend=0;for(auto& channel:interactionFilters)for(auto& filter:channel)filter={};interactionGain=1;
     for(auto& c:colourHistory)c.fill(0);for(auto& c:dryHistory)c.fill(0);
     hpInput.fill(0);hpOutput.fill(0);update();
 }
 bool EQP1AProcessor::isBusesLayoutSupported(const BusesLayout& l)const {
     return (l.getMainOutputChannelSet()==juce::AudioChannelSet::mono()||l.getMainOutputChannelSet()==juce::AudioChannelSet::stereo())&&l.getMainInputChannelSet()==l.getMainOutputChannelSet();
 }
+
+namespace {
+struct Stencil { int count=0; std::array<int,4> index{}; std::array<double,4> weight{}; };
+Stencil linearStencil(Axis a) {
+    Stencil s;s.count=2;s.index[0]=a.lo;s.index[1]=a.hi;s.weight[0]=1-a.mix;s.weight[1]=a.mix;return s;
+}
+Stencil cubicStencil(double value,int count) {
+    value=juce::jlimit(0.,double(count-1),value);Stencil s;s.count=juce::jmin(4,count);
+    const int start=juce::jlimit(0,count-s.count,int(value)-1);
+    for(int i=0;i<s.count;++i){s.index[size_t(i)]=start+i;double weight=1;for(int j=0;j<s.count;++j)if(j!=i)weight*=(value-(start+j))/double(i-j);s.weight[size_t(i)]=weight;}
+    return s;
+}
+void analogCoefficients(double* c,double n2,double n1,double n0,double d2,double d1,double d0,double sr) {
+    double k=2*sr,k2=k*k,norm=d2*k2+d1*k+d0;
+    c[0]=(n2*k2+n1*k+n0)/norm;c[1]=2*(n0-n2*k2)/norm;c[2]=(n2*k2-n1*k+n0)/norm;
+    c[3]=2*(d0-d2*k2)/norm;c[4]=(d2*k2-d1*k+d0)/norm;
+}
+}
 void EQP1AProcessor::update() {
-    const auto& data=EQPCalibration::rates[calibrationIndex];
+    const auto& data=EQPCalibration::rates[calibrationIndex];const auto& interactions=EQPInteractions::rates[calibrationIndex];
     static constexpr double lf[]={20,30,60,100},hf[]={3000,4000,5000,8000,10000,12000,16000};
     Axis l=frequencyAxis(20+10*smooth[2].getCurrentValue(),lf,4),lb=axis(smooth[0].getCurrentValue(),11),la=axis(smooth[1].getCurrentValue(),11);
-    double choice=smooth[5].getCurrentValue();
-    double highHz=choice<=19?(choice+1)*1000:choice<=20?20000+(choice-19)*10000:30000+(choice-20)*10000;
-    highHz=juce::jmin(highHz,rate*.45);
-    Axis h=frequencyAxis(highHz,hf,7),hb=axis(smooth[4].getCurrentValue(),11),bw=axis(smooth[3].getCurrentValue()*.5,6),af=axis(smooth[7].getCurrentValue(),3),ha=axis(smooth[6].getCurrentValue(),11);
+    double choice=smooth[5].getCurrentValue();double highHz=choice<=19?(choice+1)*1000:choice<=20?20000+(choice-19)*10000:30000+(choice-20)*10000;
+    highHz=juce::jmin(highHz,rate*.45);Axis h=frequencyAxis(highHz,hf,7),af=axis(smooth[7].getCurrentValue(),3);
     double highShift=1;
-    if(highHz<hf[0]||highHz>hf[6]) {
-        double anchor=highHz<hf[0]?hf[0]:hf[6];
-        highShift=std::tan(juce::MathConstants<double>::pi*highHz/rate)/std::tan(juce::MathConstants<double>::pi*juce::jmin(anchor,rate*.45)/rate);
-    }
-    auto configure=[&](Group& group,const Axis* axes,int dimensions,int sections,int kind,double shift) {
-        const auto previous=group.branches;
-        group.count=1<<dimensions;group.sections=sections;
-        for(int slot=0;slot<group.count;++slot) {
-            int indices[3]{};double weight=1;
-            for(int j=0;j<dimensions;++j){bool upper=(slot&(1<<j))!=0;indices[j]=upper?axes[j].hi:axes[j].lo;weight*=upper?axes[j].mix:1-axes[j].mix;}
-            int key=indices[0]*10000+indices[1]*100+indices[2];
-            Branch next;for(const auto& old:previous)if(old.key==key){next=old;break;}
-            next.key=key;next.weight=weight;
-            const double* source=kind==0?data.low[indices[0]][indices[1]][indices[2]]:kind==1?data.high[indices[0]][indices[1]][indices[2]]:data.atten[indices[0]][indices[1]];
-            for(int section=0;section<sections;++section) {
-                double c[5];std::copy(source+section*5,source+section*5+5,c);transform(c,data.sr,rate,shift);
-                for(auto& channel:next.channels){auto& filter=channel[size_t(section)];filter.b0=c[0];filter.b1=c[1];filter.b2=c[2];filter.a1=c[3];filter.a2=c[4];}
-            }
-            group.branches[size_t(slot)]=next;
+    if(highHz<hf[0]||highHz>hf[6]){double anchor=highHz<hf[0]?hf[0]:hf[6];highShift=std::tan(juce::MathConstants<double>::pi*highHz/rate)/std::tan(juce::MathConstants<double>::pi*juce::jmin(anchor,rate*.45)/rate);}
+    auto set=[&](Group& group,int section,double* c,double shift=1.) {
+        transform(c,data.sr,rate,shift);
+        for(auto& channel:group.channels){auto& filter=channel[size_t(section)];filter.b0=c[0];filter.b1=c[1];filter.b2=c[2];filter.a1=c[3];filter.a2=c[4];}
+    };
+    // Convex interpolation of stable low-band biquads avoids cancellation between parallel paths.
+    double low[5]{};Axis axes[]{l,lb,la};
+    for(int slot=0;slot<8;++slot){int ix[3]{};double weight=1;for(int j=0;j<3;++j){bool upper=(slot&(1<<j))!=0;ix[j]=upper?axes[j].hi:axes[j].lo;weight*=upper?axes[j].mix:1-axes[j].mix;}if(weight==0)continue;auto* source=data.low[ix[0]][ix[1]][ix[2]];for(int j=0;j<5;++j)low[j]+=weight*source[j];}
+    lowGroup.sections=1;set(lowGroup,0,low);
+    auto blend=[&](const Stencil* stencils,int kind,double* result,int values) {
+        std::fill(result,result+values,0.);int total=1;for(int j=0;j<5;++j)total*=stencils[j].count;
+        for(int vertex=0;vertex<total;++vertex){int code=vertex,ix[5]{};double weight=1;for(int j=0;j<5;++j){int k=code%stencils[j].count;code/=stencils[j].count;ix[j]=stencils[j].index[size_t(k)];weight*=stencils[j].weight[size_t(k)];}if(std::abs(weight)<1e-14)continue;
+            const float* source=kind==0?interactions.low[ix[0]][ix[1]][ix[2]][ix[3]][ix[4]]:interactions.high[ix[0]][ix[1]][ix[2]][ix[3]][ix[4]];
+            for(int j=0;j<values;++j)result[j]+=weight*source[j];
         }
     };
-    Axis lowAxes[]{l,lb,la},highAxes[]{h,hb,bw},attenAxes[]{af,ha};
-    configure(lowGroup,lowAxes,3,1,0,1);configure(highGroup,highAxes,3,2,1,highShift);configure(attenGroup,attenAxes,2,1,2,1);
+
+    double hbValue=smooth[4].getCurrentValue()/2.5,bwValue=smooth[3].getCurrentValue()/5.,haValue=smooth[6].getCurrentValue()/2.5;
+    auto configureLegacy=[&](LegacyGroup& group,const Axis* axes,int dimensions,int sections,int kind,double shift) {
+        auto previous=group.branches;group.count=1<<dimensions;group.sections=sections;
+        for(int slot=0;slot<group.count;++slot){int indices[3]{};double weight=1;for(int j=0;j<dimensions;++j){bool upper=(slot&(1<<j))!=0;indices[j]=upper?axes[j].hi:axes[j].lo;weight*=upper?axes[j].mix:1-axes[j].mix;}int key=indices[0]*10000+indices[1]*100+indices[2];LegacyBranch next;for(const auto& old:previous)if(old.key==key){next=old;break;}next.key=key;next.weight=weight;const double* source=kind==0?data.high[indices[0]][indices[1]][indices[2]]:kind==1?data.atten[indices[0]][indices[1]]:data.low[indices[0]][indices[1]][indices[2]];for(int section=0;section<sections;++section){double c[5];std::copy(source+section*5,source+section*5+5,c);transform(c,data.sr,rate,shift);for(auto& channel:next.channels){auto& f=channel[size_t(section)];f.b0=c[0];f.b1=c[1];f.b2=c[2];f.a1=c[3];f.a2=c[4];}}group.branches[size_t(slot)]=next;}
+    };
+    Axis legacyHighAxes[]{h,axis(smooth[4].getCurrentValue(),11),axis(smooth[3].getCurrentValue()/2.,6)},legacyAttenAxes[]{af,axis(smooth[6].getCurrentValue(),11)};
+    configureLegacy(legacyLow,axes,3,1,2,1.);
+    configureLegacy(legacyHigh,legacyHighAxes,3,2,0,highShift);configureLegacy(legacyAtten,legacyAttenAxes,2,1,1,1.);
+    auto coupling=[](double value){double x=juce::jlimit(0.,1.,(value-7.5)/2.);return x*x*(3-2*x);};
+    highBlend=coupling(smooth[4].getCurrentValue())*coupling(smooth[6].getCurrentValue());
+    if(highHz<hf[0]||highHz>hf[6])highBlend=0;
+    if(highBlend>0){
+        Stencil highAxes[]{linearStencil(h),cubicStencil(hbValue,5),cubicStencil(bwValue,3),linearStencil(af),cubicStencil(haValue,5)};
+        double joint[12],sections[3][5];blend(highAxes,1,joint,12);
+        bool valid=EQPInteractionMath::toSections(joint,data.sr,sections);
+        if(!valid){Stencil linearAxes[]{linearStencil(h),linearStencil(axis(hbValue,5)),linearStencil(axis(bwValue,3)),linearStencil(af),linearStencil(axis(haValue,5))};blend(linearAxes,1,joint,12);valid=EQPInteractionMath::toSections(joint,data.sr,sections);}
+        if(valid){highGroup.sections=3;for(int j=0;j<3;++j)set(highGroup,j,sections[j]);}else highBlend=0;
+    }
+    // Broad loading interaction between low and high attenuation, expressed as stable fixed-Q sections.
+    Stencil lowAxes[]{linearStencil(l),cubicStencil(smooth[0].getCurrentValue()/2.5,5),cubicStencil(smooth[1].getCurrentValue()/2.5,5),linearStencil(af),cubicStencil(haValue,5)};
+    double corrections[32];blend(lowAxes,0,corrections,32);interactionGain=std::pow(10.,juce::jlimit(-24.,24.,corrections[0])/20.);
+    for(int band=0;band<31;++band){double fc=juce::jmin(20000.,20*std::pow(2.,band/3.));fc=juce::jmin(fc,.45*rate);double centre=2*rate*std::tan(juce::MathConstants<double>::pi*fc/rate),a=std::pow(10.,juce::jlimit(-24.,24.,corrections[band+1])/40.),c[5];analogCoefficients(c,1,centre/1.8*a,centre*centre,1,centre/1.8/a,centre*centre,rate);for(auto& channel:interactionFilters){auto& filter=channel[size_t(band)];filter.b0=c[0];filter.b1=c[1];filter.b2=c[2];filter.a1=c[3];filter.a2=c[4];}}
 }
 void EQP1AProcessor::processAudio(juce::AudioBuffer<float>& b,bool forcedBypass) {
     juce::ScopedNoDenormals no;
@@ -107,7 +141,7 @@ void EQP1AProcessor::processAudio(juce::AudioBuffer<float>& b,bool forcedBypass)
         for(int c=0;c<channels;++c) {
             double x=b.getSample(c,i);if(!std::isfinite(x))x=0;
             auto ch=size_t(c);dryHistory[ch][size_t(historyIndex)]=x;dry[c]=dryHistory[ch][size_t((historyIndex-data.latency)&255)];
-            double y=attenGroup.tick(highGroup.tick(lowGroup.tick(x,c),c),c);
+            double low=legacyLow.tick(x,c);double independent=legacyAtten.tick(legacyHigh.tick(low,c),c);double modern=highGroup.tick(low,c);double y=(highBlend*modern+(1-highBlend)*independent)*interactionGain;for(auto& filter:interactionFilters[ch])y=filter.tick(y);
             colourHistory[ch][size_t(historyIndex)]=y;y=0;
             for(int k=0;k<data.kernelSize;++k)y+=data.kernel[k]*colourHistory[ch][size_t((historyIndex-k)&255)];
             double hp=(1+hpPole)*.5*(y-hpInput[ch])+hpPole*hpOutput[ch];hpInput[ch]=y;hpOutput[ch]=hp;

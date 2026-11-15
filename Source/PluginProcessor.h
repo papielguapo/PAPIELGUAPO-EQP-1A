@@ -38,26 +38,28 @@ private:
         double tick(double x) { double y=b0*x+z1;z1=b1*x-a1*y+z2;z2=b2*x-a2*y;return y; }
         void clear(){ z1=z2=0; }
     };
-    struct Branch {
-        std::array<std::array<Filter,2>,2> channels;
-        int key=-1;
-        double weight=0;
-    };
     struct Group {
-        std::array<Branch,8> branches;
-        int count=0, sections=1;
+        std::array<std::array<Filter,3>,2> channels;
+        int sections=1;
         double tick(double x,int channel) noexcept {
-            double sum=0;
-            for(int i=0;i<count;++i) {
-                auto& branch=branches[size_t(i)];
-                double y=x;
-                for(int j=0;j<sections;++j)y=branch.channels[size_t(channel)][size_t(j)].tick(y);
-                sum+=branch.weight*y;
-            }
-            return sum;
+            for(int j=0;j<sections;++j)x=channels[size_t(channel)][size_t(j)].tick(x);
+            return x;
         }
     };
-    Group lowGroup,highGroup,attenGroup;
+    struct LegacyBranch {
+        std::array<std::array<Filter,2>,2> channels;
+        int key=-1; double weight=0;
+    };
+    struct LegacyGroup {
+        std::array<LegacyBranch,8> branches;
+        int count=0,sections=1;
+        double tick(double x,int channel) noexcept { double sum=0;for(int i=0;i<count;++i){auto& b=branches[size_t(i)];double y=x;for(int j=0;j<sections;++j)y=b.channels[size_t(channel)][size_t(j)].tick(y);sum+=b.weight*y;}return sum; }
+    };
+    Group lowGroup,highGroup;
+    LegacyGroup legacyLow,legacyHigh,legacyAtten;
+    double highBlend=0;
+    std::array<std::array<Filter,31>,2> interactionFilters;
+    double interactionGain=1;
     std::array<juce::SmoothedValue<float>,8> smooth;
     juce::SmoothedValue<float> active,fixBlend;
     std::array<std::array<double,256>,2> colourHistory{},dryHistory{};

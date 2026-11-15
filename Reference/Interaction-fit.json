@@ -1,0 +1,63 @@
+{
+  "reference": "UADx EQP-1A 1.2.16",
+  "newInteractionMeasurements": 3075,
+  "measurementSampleRate": 48000,
+  "derivedFilterRates": [
+    44100,
+    48000,
+    96000,
+    192000
+  ],
+  "jointHighFits": [
+    {
+      "sampleRate": 44100,
+      "cases": 1575,
+      "maxMagnitudeFitError_dB": 0.026483359052244637,
+      "meanRmsFitError_dB": 0.00040864149198515824
+    },
+    {
+      "sampleRate": 48000,
+      "cases": 1575,
+      "maxMagnitudeFitError_dB": 0.009909270717951557,
+      "meanRmsFitError_dB": 0.0002591566698069791
+    },
+    {
+      "sampleRate": 96000,
+      "cases": 1575,
+      "maxMagnitudeFitError_dB": 0.01090044320523642,
+      "meanRmsFitError_dB": 0.00018794418343737876
+    },
+    {
+      "sampleRate": 192000,
+      "cases": 1575,
+      "maxMagnitudeFitError_dB": 0.010783273195774434,
+      "meanRmsFitError_dB": 0.00018214995180055842
+    }
+  ],
+  "lowInteractionFits": [
+    {
+      "sr": 44100,
+      "maxFitError": 0.06522014904779261,
+      "rmsFitError": 0.002045706594022432,
+      "maxGain": 3.7854781488264018
+    },
+    {
+      "sr": 48000,
+      "maxFitError": 0.04345828282285935,
+      "rmsFitError": 0.001627839701630706,
+      "maxGain": 3.797382281245029
+    },
+    {
+      "sr": 96000,
+      "maxFitError": 0.03777232484462445,
+      "rmsFitError": 0.001068316915546065,
+      "maxGain": 3.898694871927429
+    },
+    {
+      "sr": 192000,
+      "maxFitError": 0.037915849111353594,
+      "rmsFitError": 0.0010439723809154851,
+      "maxGain": 3.9235084540275413
+    }
+  ]
+}

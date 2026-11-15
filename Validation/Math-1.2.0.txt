@@ -1,0 +1,4 @@
+44100 failures=0 max relative error=1.63243e-13
+48000 failures=0 max relative error=1.8486e-12
+96000 failures=0 max relative error=3.93438e-12
+192000 failures=0 max relative error=2.05304e-11
