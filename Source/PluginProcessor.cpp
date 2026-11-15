@@ -57,7 +57,7 @@ void EQP1AProcessor::reset() {
     inputEnergy=outputEnergy=0;matchGain=1;historyIndex=0;
     lowGroup={};highGroup={};legacyLow={};legacyHigh={};legacyAtten={};highBlend=0;for(auto& channel:interactionFilters)for(auto& filter:channel)filter={};interactionGain=1;
     for(auto& c:colourHistory)c.fill(0);for(auto& c:dryHistory)c.fill(0);
-    hpInput.fill(0);hpOutput.fill(0);update();
+    hpInput.fill(0);hpOutput.fill(0);for(auto& colour:harmonicColour)colour.reset();update();
 }
 bool EQP1AProcessor::isBusesLayoutSupported(const BusesLayout& l)const {
     return (l.getMainOutputChannelSet()==juce::AudioChannelSet::mono()||l.getMainOutputChannelSet()==juce::AudioChannelSet::stereo())&&l.getMainInputChannelSet()==l.getMainOutputChannelSet();
@@ -147,7 +147,7 @@ void EQP1AProcessor::processAudio(juce::AudioBuffer<float>& b,bool forcedBypass)
             colourHistory[ch][size_t(historyIndex)]=y;y=0;
             for(int k=0;k<data.kernelSize;++k)y+=data.kernel[k]*colourHistory[ch][size_t((historyIndex-k)&255)];
             double hp=(1+hpPole)*.5*(y-hpInput[ch])+hpPole*hpOutput[ch];hpInput[ch]=y;hpOutput[ch]=hp;
-            equalized[c]=hp;inPower+=dry[c]*dry[c];outPower+=hp*hp;
+            equalized[c]=harmonicColour[ch].tick(hp);inPower+=dry[c]*dry[c];outPower+=equalized[c]*equalized[c];
         }
         historyIndex=(historyIndex+1)&255;
         inputEnergy=energyPole*inputEnergy+(1-energyPole)*inPower;outputEnergy=energyPole*outputEnergy+(1-energyPole)*outPower;

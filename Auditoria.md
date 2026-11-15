@@ -1,3 +1,9 @@
+# Actualización v1.4.0 — color sutil
+
+Se añade una rama simétrica de saturación suave con ADAA de primer orden, antes de FIX y Output. Sin ruido aleatorio, con cero exacto tras reset y entrada nula. La ruta lineal conserva su latencia. No pretende reproducir la saturación del UAD. ADAA reduce aliasing, pero no garantiza eliminarlo; la coloración depende del nivel de entrada y de los realces EQ.
+
+Validación actual: Validation/DSP-1.4.0.txt y Validation/pluginval-1.4.0.txt. Las mediciones UAD y de linealidad que siguen son históricas, anteriores a esta etapa. Las sesiones anteriores cambian ligeramente su sonido al cargar esta versión.
+
 # Auditoría — EQP-1A 1.3.1
 
 15 de noviembre de 2026. Revisión funcional, numérica y comparación de audio contra UADx EQP-1A 1.2.16 instalado localmente.

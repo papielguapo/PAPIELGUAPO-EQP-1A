@@ -1,6 +1,7 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <array>
+#include "SubtleColour.h"
 #include <atomic>
 #include <cmath>
 
@@ -55,6 +56,7 @@ private:
         int count=0,sections=1;
         double tick(double x,int channel) noexcept { double sum=0;for(int i=0;i<count;++i){auto& b=branches[size_t(i)];double y=x;for(int j=0;j<sections;++j)y=b.channels[size_t(channel)][size_t(j)].tick(y);sum+=b.weight*y;}return sum; }
     };
+    std::array<SubtleColour,2> harmonicColour;
     Group lowGroup,highGroup;
     LegacyGroup legacyLow,legacyHigh,legacyAtten;
     double highBlend=0;

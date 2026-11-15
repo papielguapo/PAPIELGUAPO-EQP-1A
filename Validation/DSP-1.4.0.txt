@@ -1,0 +1,11 @@
+PASS third harmonic -50.6871 dBc at 44100 Hz; silence exact zero
+PASS third harmonic -50.687 dBc at 48000 Hz; silence exact zero
+PASS third harmonic -50.6866 dBc at 96000 Hz; silence exact zero
+PASS third harmonic -50.6865 dBc at 192000 Hz; silence exact zero
+PASS DSP, bandwidth, RMS match and all high steps at 44100 Hz
+PASS DSP, bandwidth, RMS match and all high steps at 48000 Hz
+PASS DSP, bandwidth, RMS match and all high steps at 96000 Hz
+PASS DSP, bandwidth, RMS match and all high steps at 192000 Hz
+PASS subtle low-level colour and digital silence
+PASS OUTPUT after FIX: +6/-6 dB, FIX off, bypass and state
+PASS UADx proportions and compact resize dimensions, double-click numeric entry, units, snapping, cancel, state and editor render

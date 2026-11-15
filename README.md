@@ -1,10 +1,16 @@
 # EQP-1A — Papielguapo
 
-**v1.3.1 · Windows x64 · VST3 y standalone · motor limpio e independiente**
+**v1.4.0 · Windows x64 · VST3 y standalone · motor independiente con color sutil**
 
 ![EQP-1A](Preview.png)
 
 Ecualizador inspirado en EQP-1A, con skin de aluminio y mandos violeta de VCA SSL/FET 67. Cinco controles arriba y cuatro abajo, incluyendo Output como en el EQP-1A. Sin medidor. Proporción tomada del editor UADx instalado: 713 × 225. Abre siempre compacto a 428 × 135 y permite reducir a 356 × 112 o ampliar hasta 2852 × 900. Mantiene mandos circulares y dos filas.
+
+## Color sutil de v1.4.0
+
+Etapa simétrica de saturación suave en paralelo, después de EQ y antes de FIX. Refuerza principalmente el tercer armónico, sin generador de ruido y sin mando adicional. Output sigue después de FIX. A −6 dBFS el tercer armónico de prueba ronda −51 dBc. La rama no lineal emplea antiderivación ADAA para reducir aliasing; no lo elimina por completo. La ruta lineal mantiene su latencia. Las sesiones existentes adquieren esta coloración al actualizar.
+
+Las comparaciones con UADx de abajo corresponden al motor lineal v1.2, antes de añadir esta etapa; no validan equivalencia armónica con UAD.
 
 ## Controles
 
