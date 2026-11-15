@@ -101,8 +101,8 @@ void EQP1ALookAndFeel::drawToggleButton(juce::Graphics& g, juce::ToggleButton& b
     if(hover||down||b.hasKeyboardFocus(true)){g.setColour(colour(0xffb84dff).withAlpha(0.65f));g.drawEllipse(bx-15,c.y-15,30,30,1);}
 }
 
-static constexpr int xs[]={360,510,360,510,810,660,960,810};
-static constexpr int ys[]={105,105,245,245,105,245,105,245};
+static constexpr int xs[]={360,510,435,610,710,785,860,1010};
+static constexpr int ys[]={105,105,245,245,105,245,105,105};
 FaceplateComponent::FaceplateComponent(EQP1AProcessor& p):processor(p){setLookAndFeel(&look);
  const char* names[]={"Low Boost","Low Attenuation","Low Frequency","Bandwidth","High Boost","High Frequency","High Attenuation","Attenuation Frequency"};
  const char* params[]={"lowBoost","lowAtten","lowFreq","bandwidth","highBoost","highFreq","highAtten","attenFreq"};
@@ -151,11 +151,11 @@ void FaceplateComponent::paint(juce::Graphics& g){
  for(int t=0;t<=steps;++t){float a=juce::MathConstants<float>::pi*(7.f/6.f+5.f/3.f*float(t)/float(steps));float dx=std::sin(a),dy=-std::cos(a);g.setColour(colour(0xff22292b));g.fillEllipse(cx+dx*43-1.5f,cy+dy*43-1.5f,3,3);juce::String s;
  if(i==2){if(t%2==0)s=juce::String(20+10*t);}else if(i==5){if(t==0||t==4||t==9||t==14||t==21)s=juce::String(t<20?t+1:40);}else if(i==7){const char* z[]={"5","10","20"};s=z[t];}else if(i==8)s=juce::String(-18+t*7.2,0);else s=juce::String(t*2);if(i==3&&(t==0||t==steps))s=t==0?"SHARP":"BROAD";
  text(g,s,cx+dx*57-22,cy+dy*57-7,44,14,(i==3&&(t==0||t==steps))?8.0f:10.0f);}
- text(g,titles[i],cx-65,cy+(ys[i]<150?52.0f:67.0f),130,18,11);
+ text(g,titles[i],cx-65,ys[i]<150?18.0f:cy+67.0f,130,18,11);
  }
- g.setColour(colour(0xff353b3e));text(g,"LOW FREQUENCY",305,18,260,18,11);text(g,"HIGH FREQUENCY",750,18,280,18,11);
+ g.setColour(colour(0xff353b3e));
 
- for(int i : {2,5,7}) { auto value=knobs[size_t(i)].getTextFromValue(knobs[size_t(i)].getValue());text(g,value,float(xs[i]-35),291,70,15,10); }
+ for(int i : {2,5,7}) { auto value=knobs[size_t(i)].getTextFromValue(knobs[size_t(i)].getValue());text(g,value,float(xs[i]-35),float(ys[i]+46),70,15,10); }
  g.setColour(colour(0xff15191b));text(g,"ON",1138,240,30,15,10);text(g,"OFF",1218,240,35,15,10);text(g,"FIX",1152,276,85,18,12);
     // Hand-drawn vector script, independent of installed fonts.
     juce::Path signature;

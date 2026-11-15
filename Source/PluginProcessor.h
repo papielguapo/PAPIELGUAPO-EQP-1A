@@ -37,12 +37,34 @@ private:
         double b0=1,b1=0,b2=0,a1=0,a2=0,z1=0,z2=0;
         double tick(double x) { double y=b0*x+z1;z1=b1*x-a1*y+z2;z2=b2*x-a2*y;return y; }
         void clear(){ z1=z2=0; }
-        void design(int type,double hz,double db,double q,double sr);
     };
-    std::array<std::array<Filter,4>,2> filters;
+    struct Branch {
+        std::array<std::array<Filter,2>,2> channels;
+        int key=-1;
+        double weight=0;
+    };
+    struct Group {
+        std::array<Branch,8> branches;
+        int count=0, sections=1;
+        double tick(double x,int channel) noexcept {
+            double sum=0;
+            for(int i=0;i<count;++i) {
+                auto& branch=branches[size_t(i)];
+                double y=x;
+                for(int j=0;j<sections;++j)y=branch.channels[size_t(channel)][size_t(j)].tick(y);
+                sum+=branch.weight*y;
+            }
+            return sum;
+        }
+    };
+    Group lowGroup,highGroup,attenGroup;
     std::array<juce::SmoothedValue<float>,8> smooth;
-    juce::SmoothedValue<float> active, fixBlend;
-    double rate=44100, inputEnergy=0, outputEnergy=0, matchGain=1, energyPole=0, gainPole=0;
+    juce::SmoothedValue<float> active,fixBlend;
+    std::array<std::array<double,256>,2> colourHistory{},dryHistory{};
+    std::array<double,2> hpInput{},hpOutput{};
+    int calibrationIndex=1,historyIndex=0;
+    double rate=44100,hpPole=0,inputEnergy=0,outputEnergy=0,matchGain=1,energyPole=0,gainPole=0;
     void update();
+    void processAudio(juce::AudioBuffer<float>&,bool);
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EQP1AProcessor)
 };

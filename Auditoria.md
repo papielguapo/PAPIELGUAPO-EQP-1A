@@ -1,49 +1,45 @@
-# Auditoría — EQP-1A 1.0.1
+# Auditoría — EQP-1A 1.1.0
 
-15 de noviembre de 2026. Auditoría local de código, DSP, interfaz e instalación. No es una comparación acústica con UAD.
+15 de noviembre de 2026. Revisión local de código, DSP, interfaz y comparación empírica con UADx Pultec EQP-1A EQ 1.2.16.
 
 ## Resultado
 
-Comprobaciones aprobadas. Compilación Release x64 con Visual Studio 2026 y JUCE 9.0.5. VST3 y standalone generados e instalados. El VST3 instalado termina pluginval 1.0.4 en nivel 5 con SUCCESS.
+Las comprobaciones funcionales de DSP y pluginval nivel 5 están aprobadas. La equivalencia 1:1 completa con UADx no está conseguida: quedan diferencias en algunas combinaciones entre bandas.
 
-## DSP
+Se recogieron 3920 respuestas de referencia a 44,1, 48, 96 y 192 kHz. El ajuste de las ramas calibradas tiene un error máximo de 0,047 dB en la banda medida. Esa cifra no describe la respuesta combinada ni la fase.
 
-Pruebas con cuatro tonos simultáneos (30 Hz, 1 kHz, 4 kHz y 8 kHz), repetidas a 44,1, 48, 96 y 192 kHz:
+La comparación independiente del VST3 compilado tiene 220 casos. En 164 casos aislados, el máximo es 0,263 dB y el error RMS medio es 0,051 dB. En 48 casos combinados, el máximo es 4,479 dB y el error RMS medio es 0,439 dB. Se comprobaron además ocho casos a distintos niveles. Los resultados completos están en Reference/Compiled-comparison.json y su gráfica.
 
-- Respuesta neutra: desviación RMS menor de 0,03 dB.
-- Realce de graves y agudos verificado mediante relaciones espectrales.
-- Atenuación de graves simultánea al realce, sin cancelación trivial.
-- Bandwidth: Broad amplía la respuesta respecto a Sharp; comprobado fuera del centro de la banda.
-- Atenuación de agudos comprobada.
-- FIX encendido: diferencia RMS menor de 0,15 dB en los casos principales tras estabilizarse, y menor de 0,25 dB en el barrido de todos los pasos de agudos.
-- FIX apagado: conserva la ganancia de la EQ.
-- Power apagado: paso directo con diferencia menor de 0,03 dB.
-- Salidas finitas y canales idénticos para entradas estéreo idénticas.
-- Los 22 pasos de agudos se procesan en las cuatro frecuencias de muestreo sin fallos de estas comprobaciones.
+## Funcionalidad comprobada
 
-## Parámetros, estado e interfaz
+- Mono/estéreo, parámetros y estado mediante pluginval nivel 5: SUCCESS.
+- Curva conjunta de Boost/Atten de graves contrastada con UADx, incluido el valle resonante.
+- Bandwidth modifica tanto anchura como altura de la curva de agudos.
+- FIX encendido mantiene el RMS después de estabilizarse; apagado conserva la ganancia de EQ.
+- Power conserva el paso directo con su retardo de compensación.
+- Todos los pasos de agudos producen salida finita a 44,1, 48, 96 y 192 kHz.
+- Listas exactas de nueve pasos de graves y 22 de agudos, estado y ausencia de mando Output.
+- Apertura y reapertura a 934 × 238 después de ampliar el editor.
+- Linealidad con FIX apagado y ausencia de ruido generado en silencio.
+- Captura JUCE revisada: cinco controles superiores y tres inferiores, con ATTEN SEL arriba como en EQP-1A. Sin medidor ni solapamientos observados.
 
-- Nueve pasos de graves: 20 a 100 Hz en incrementos de 10 Hz.
-- 22 pasos de agudos: 1 a 20 kHz, más 30 y 40 kHz.
-- Recuperación de ajustes serializados.
-- Sin parámetro ni mando Output; FIX es un interruptor automatizable.
-- Apertura a 934 × 238 y reapertura a ese tamaño después de ampliar el editor.
-- Captura real de JUCE revisada: panel de 1334 × 340, dos filas de cuatro mandos, un único Bandwidth, sin medidor ni solapamientos observados.
-- Pluginval nivel 5 contra el binario instalado: consultar el informe original para las pruebas de parámetros, estado, procesamiento, buses y editor.
+## Implementación
 
-## Revisión e instalación
+Filtros estables por canal con mezclas entre puntos de calibración, FIR de referencia y paso alto de 1 Hz. Sin saturación, ruido aleatorio ni modelado no lineal. La ruta de audio usa memoria preasignada y no accede a disco ni a red. FIX está enlazado en estéreo y limitado a ±36 dB.
 
-Revisadas las rutas de procesamiento, límites de frecuencia, filtros por canal, suavizado, bypass y compensación RMS. El procesamiento usa memoria preasignada y no accede a disco ni a red. FIX está enlazado en estéreo y limitado a ±36 dB; no hay limitador de picos. Los parámetros se suavizan durante los cambios.
+Latencia comunicada al DAW: 86 muestras a 44,1/48 kHz, 118 a 96 kHz y 151 a 192 kHz. El bypass utiliza un retardo equivalente.
 
-Instalación efectiva en la carpeta VST3 del usuario y en Programs/Papielguapo/EQP-1A, con accesos directos en Escritorio e Inicio. La carpeta VST3 del sistema no era escribible y el instalador utilizó su alternativa de usuario.
+## Límites
 
-## Límites conocidos
-
-No se ha realizado comparación de audio contra UAD ni validación en cada DAW. Se utilizan filtros digitales propios, sin reproducción del circuito pasivo, válvulas o transformadores. FIX iguala RMS tras estabilizarse, no picos instantáneos. Las frecuencias internas se limitan a 0,45 × sample rate: para alcanzar 40 kHz se requiere 96 kHz o más. Sin sobremuestreo ni latencia añadida por bloques.
+El modelo en cascada no reproduce todas las interacciones de la red pasiva original. No se han igualado fase, distorsión ni sobrecarga. Las frecuencias extra sin equivalente UADx se interpolan o extrapolan. FIX iguala RMS, no picos instantáneos. No se ha comprobado cada DAW.
 
 ## Evidencia
 
-- Validation/DSP-final.txt
-- Validation/pluginval-installed-final.txt
+- Validation/DSP-1.1.0.txt
+- Validation/pluginval-1.1.0.txt
+- Reference/Calibration.md
+- Reference/Calibration-summary.json
+- Reference/Compiled-comparison.json
+- Reference/Comparacion-UADx.png
 - Preview.png
 - Tests/Tests.cpp

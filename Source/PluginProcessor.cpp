@@ -1,13 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-void EQP1AProcessor::Filter::design(int type,double hz,double db,double q,double sr) {
- hz=juce::jlimit(5.,sr*.45,hz);double A=std::pow(10.,db/40.),w=juce::MathConstants<double>::twoPi*hz/sr,c=std::cos(w),s=std::sin(w),al=s/(2*q),a0;
- if(type==0){a0=1+al/A;b0=1+al*A;b1=-2*c;b2=1-al*A;a1=-2*c;a2=1-al/A;}
- else {double t=2*std::sqrt(A)*al;
- if(type==1){b0=A*((A+1)-(A-1)*c+t);b1=2*A*((A-1)-(A+1)*c);b2=A*((A+1)-(A-1)*c-t);a0=(A+1)+(A-1)*c+t;a1=-2*((A-1)+(A+1)*c);a2=(A+1)+(A-1)*c-t;}
- else {b0=A*((A+1)+(A-1)*c+t);b1=-2*A*((A-1)+(A+1)*c);b2=A*((A+1)+(A-1)*c-t);a0=(A+1)-(A-1)*c+t;a1=2*((A-1)-(A+1)*c);a2=(A+1)-(A-1)*c-t;}}
- b0/=a0;b1/=a0;b2/=a0;a1/=a0;a2/=a0;
-}
+#include "CalibrationData.h"
 juce::AudioProcessorValueTreeState::ParameterLayout EQP1AProcessor::makeParameters(){
  juce::AudioProcessorValueTreeState::ParameterLayout p;
  auto f=[&](const char* id,const char* name,float lo,float hi,float value){p.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{id,1},name,juce::NormalisableRange<float>(lo,hi,.01f),value));};
@@ -24,28 +17,112 @@ juce::AudioProcessorValueTreeState::ParameterLayout EQP1AProcessor::makeParamete
 }
 EQP1AProcessor::EQP1AProcessor():AudioProcessor(BusesProperties().withInput("Input",juce::AudioChannelSet::stereo(),true).withOutput("Output",juce::AudioChannelSet::stereo(),true)),apvts(*this,nullptr,"EQP1A",makeParameters()){}
 static const char* ids[]={"lowBoost","lowAtten","lowFreq","bandwidth","highBoost","highFreq","highAtten","attenFreq"};
-void EQP1AProcessor::prepareToPlay(double sr,int){rate=sr;energyPole=std::exp(-1.0/(sr*.3));gainPole=std::exp(-1.0/(sr*.15));for(size_t i=0;i<smooth.size();++i){smooth[i].reset(sr,.035);smooth[i].setCurrentAndTargetValue(apvts.getRawParameterValue(ids[i])->load());}fixBlend.reset(sr,.035);fixBlend.setCurrentAndTargetValue(apvts.getRawParameterValue("fix")->load()>.5f?1.f:0.f);active.reset(sr,.015);active.setCurrentAndTargetValue(apvts.getRawParameterValue("power")->load()>.5f && apvts.getRawParameterValue("bypass")->load()<.5f?1.f:0.f);reset();update();}
-void EQP1AProcessor::reset(){inputEnergy=outputEnergy=0;matchGain=1;for(auto& ch:filters)for(auto& f:ch)f.clear();}
-bool EQP1AProcessor::isBusesLayoutSupported(const BusesLayout& l)const{return (l.getMainOutputChannelSet()==juce::AudioChannelSet::mono()||l.getMainOutputChannelSet()==juce::AudioChannelSet::stereo())&&l.getMainInputChannelSet()==l.getMainOutputChannelSet();}
-void EQP1AProcessor::update(){
- static constexpr double lf[]={20,30,40,50,60,70,80,90,100},hf[]={1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,11000,12000,13000,14000,15000,16000,17000,18000,19000,20000,30000,40000},af[]={5000,10000,20000};
- auto interp=[](const double* a,int n,float x){x=juce::jlimit(0.f,float(n-1),x);int i=int(x);return a[i]*std::pow(a[juce::jmin(i+1,n-1)]/a[i],x-i);};
- double low=interp(lf,9,smooth[2].getCurrentValue()),high=interp(hf,22,smooth[5].getCurrentValue()),cut=interp(af,3,smooth[7].getCurrentValue());
- for(auto& ch:filters){ch[0].design(1,low,1.35*smooth[0].getCurrentValue(),.72,rate);ch[1].design(1,low*2.1,-1.5*smooth[1].getCurrentValue(),.54,rate);ch[2].design(0,high,1.8*smooth[4].getCurrentValue(),2.8*std::pow(.16,smooth[3].getCurrentValue()/10.),rate);ch[3].design(2,cut,-1.6*smooth[6].getCurrentValue(),.6,rate);}
+
+namespace {
+struct Axis { int lo,hi; double mix; };
+Axis axis(double v,int count) {
+    v=juce::jlimit(0.,double(count-1),v);
+    int lo=int(v);return {lo,juce::jmin(lo+1,count-1),v-lo};
 }
-void EQP1AProcessor::processBlock(juce::AudioBuffer<float>& b,juce::MidiBuffer&){
- juce::ScopedNoDenormals no;for(int c=getTotalNumInputChannels();c<b.getNumChannels();++c)b.clear(c,0,b.getNumSamples());
- for(size_t i=0;i<smooth.size();++i)smooth[i].setTargetValue(apvts.getRawParameterValue(ids[i])->load());
- fixBlend.setTargetValue(apvts.getRawParameterValue("fix")->load()>.5f?1.f:0.f);
- active.setTargetValue(apvts.getRawParameterValue("power")->load()>.5f && apvts.getRawParameterValue("bypass")->load()<.5f?1.f:0.f);
- for(int i=0;i<b.getNumSamples();++i){for(auto& s:smooth)s.getNextValue();if((i&15)==0)update();float wet=active.getNextValue();double dry[2]{},eq[2]{},inPower=0,outPower=0;int channels=juce::jmin(2,b.getNumChannels());
- for(int c=0;c<channels;++c){double x=b.getSample(c,i);if(!std::isfinite(x))x=0;dry[c]=x;double y=x;for(auto& f:filters[size_t(c)])y=f.tick(y);eq[c]=y;inPower+=x*x;outPower+=y*y;}
- inputEnergy=energyPole*inputEnergy+(1-energyPole)*inPower;outputEnergy=energyPole*outputEnergy+(1-energyPole)*outPower;
- double target=matchGain;if(inputEnergy>1e-12 && outputEnergy>1e-16)target=juce::jlimit(.0158489319,63.09573445,std::sqrt(inputEnergy/outputEnergy));matchGain=gainPole*matchGain+(1-gainPole)*target;
- double compensation=1+fixBlend.getNextValue()*(matchGain-1);for(int c=0;c<channels;++c)b.setSample(c,i,float(dry[c]+wet*(eq[c]*compensation-dry[c])));
- }
+Axis frequencyAxis(double hz,const double* frequencies,int count) {
+    if(hz<=frequencies[0])return {0,0,0};
+    for(int i=0;i<count-1;++i)if(hz<=frequencies[i+1])
+        return {i,i+1,std::log(hz/frequencies[i])/std::log(frequencies[i+1]/frequencies[i])};
+    return {count-1,count-1,0};
 }
-void EQP1AProcessor::processBlockBypassed(juce::AudioBuffer<float>&,juce::MidiBuffer&){reset();}
+void transform(double* c,double referenceRate,double sampleRate,double shift) {
+    if(referenceRate==sampleRate && std::abs(shift-1.)<1e-12)return;
+    const double k=2*referenceRate,k2=k*k;
+    double n2=c[0]-c[1]+c[2], n1=2*k*(c[0]-c[2])*shift, n0=k2*(c[0]+c[1]+c[2])*shift*shift;
+    double d2=1-c[3]+c[4],d1=2*k*(1-c[4])*shift,d0=k2*(1+c[3]+c[4])*shift*shift;
+    const double q=2*sampleRate,q2=q*q,norm=d2*q2+d1*q+d0;
+    c[0]=(n2*q2+n1*q+n0)/norm;c[1]=2*(n0-n2*q2)/norm;c[2]=(n2*q2-n1*q+n0)/norm;
+    c[3]=2*(d0-d2*q2)/norm;c[4]=(d2*q2-d1*q+d0)/norm;
+}
+}
+void EQP1AProcessor::prepareToPlay(double sr,int) {
+    rate=sr;calibrationIndex=0;
+    for(int i=1;i<4;++i)if(std::abs(std::log(sr/EQPCalibration::rates[i].sr))<std::abs(std::log(sr/EQPCalibration::rates[calibrationIndex].sr)))calibrationIndex=i;
+    setLatencySamples(EQPCalibration::rates[calibrationIndex].latency);
+    energyPole=std::exp(-1/(sr*.3));gainPole=std::exp(-1/(sr*.15));hpPole=std::exp(-juce::MathConstants<double>::twoPi/sr);
+    for(size_t i=0;i<smooth.size();++i){smooth[i].reset(sr,.035);smooth[i].setCurrentAndTargetValue(apvts.getRawParameterValue(ids[i])->load());}
+    fixBlend.reset(sr,.035);fixBlend.setCurrentAndTargetValue(apvts.getRawParameterValue("fix")->load()>.5f?1.f:0.f);
+    active.reset(sr,.015);active.setCurrentAndTargetValue(apvts.getRawParameterValue("power")->load()>.5f && apvts.getRawParameterValue("bypass")->load()<.5f?1.f:0.f);
+    reset();update();
+}
+void EQP1AProcessor::reset() {
+    inputEnergy=outputEnergy=0;matchGain=1;historyIndex=0;
+    lowGroup={};highGroup={};attenGroup={};
+    for(auto& c:colourHistory)c.fill(0);for(auto& c:dryHistory)c.fill(0);
+    hpInput.fill(0);hpOutput.fill(0);update();
+}
+bool EQP1AProcessor::isBusesLayoutSupported(const BusesLayout& l)const {
+    return (l.getMainOutputChannelSet()==juce::AudioChannelSet::mono()||l.getMainOutputChannelSet()==juce::AudioChannelSet::stereo())&&l.getMainInputChannelSet()==l.getMainOutputChannelSet();
+}
+void EQP1AProcessor::update() {
+    const auto& data=EQPCalibration::rates[calibrationIndex];
+    static constexpr double lf[]={20,30,60,100},hf[]={3000,4000,5000,8000,10000,12000,16000};
+    Axis l=frequencyAxis(20+10*smooth[2].getCurrentValue(),lf,4),lb=axis(smooth[0].getCurrentValue(),11),la=axis(smooth[1].getCurrentValue(),11);
+    double choice=smooth[5].getCurrentValue();
+    double highHz=choice<=19?(choice+1)*1000:choice<=20?20000+(choice-19)*10000:30000+(choice-20)*10000;
+    highHz=juce::jmin(highHz,rate*.45);
+    Axis h=frequencyAxis(highHz,hf,7),hb=axis(smooth[4].getCurrentValue(),11),bw=axis(smooth[3].getCurrentValue()*.5,6),af=axis(smooth[7].getCurrentValue(),3),ha=axis(smooth[6].getCurrentValue(),11);
+    double highShift=1;
+    if(highHz<hf[0]||highHz>hf[6]) {
+        double anchor=highHz<hf[0]?hf[0]:hf[6];
+        highShift=std::tan(juce::MathConstants<double>::pi*highHz/rate)/std::tan(juce::MathConstants<double>::pi*juce::jmin(anchor,rate*.45)/rate);
+    }
+    auto configure=[&](Group& group,const Axis* axes,int dimensions,int sections,int kind,double shift) {
+        const auto previous=group.branches;
+        group.count=1<<dimensions;group.sections=sections;
+        for(int slot=0;slot<group.count;++slot) {
+            int indices[3]{};double weight=1;
+            for(int j=0;j<dimensions;++j){bool upper=(slot&(1<<j))!=0;indices[j]=upper?axes[j].hi:axes[j].lo;weight*=upper?axes[j].mix:1-axes[j].mix;}
+            int key=indices[0]*10000+indices[1]*100+indices[2];
+            Branch next;for(const auto& old:previous)if(old.key==key){next=old;break;}
+            next.key=key;next.weight=weight;
+            const double* source=kind==0?data.low[indices[0]][indices[1]][indices[2]]:kind==1?data.high[indices[0]][indices[1]][indices[2]]:data.atten[indices[0]][indices[1]];
+            for(int section=0;section<sections;++section) {
+                double c[5];std::copy(source+section*5,source+section*5+5,c);transform(c,data.sr,rate,shift);
+                for(auto& channel:next.channels){auto& filter=channel[size_t(section)];filter.b0=c[0];filter.b1=c[1];filter.b2=c[2];filter.a1=c[3];filter.a2=c[4];}
+            }
+            group.branches[size_t(slot)]=next;
+        }
+    };
+    Axis lowAxes[]{l,lb,la},highAxes[]{h,hb,bw},attenAxes[]{af,ha};
+    configure(lowGroup,lowAxes,3,1,0,1);configure(highGroup,highAxes,3,2,1,highShift);configure(attenGroup,attenAxes,2,1,2,1);
+}
+void EQP1AProcessor::processAudio(juce::AudioBuffer<float>& b,bool forcedBypass) {
+    juce::ScopedNoDenormals no;
+    for(int c=getTotalNumInputChannels();c<b.getNumChannels();++c)b.clear(c,0,b.getNumSamples());
+    bool moving=false;
+    for(size_t i=0;i<smooth.size();++i){smooth[i].setTargetValue(apvts.getRawParameterValue(ids[i])->load());moving=moving||smooth[i].isSmoothing();}
+    fixBlend.setTargetValue(apvts.getRawParameterValue("fix")->load()>.5f?1.f:0.f);
+    active.setTargetValue(!forcedBypass && apvts.getRawParameterValue("power")->load()>.5f && apvts.getRawParameterValue("bypass")->load()<.5f?1.f:0.f);
+    const auto& data=EQPCalibration::rates[calibrationIndex];
+    const int channels=juce::jmin(2,b.getNumChannels());
+    for(int i=0;i<b.getNumSamples();++i) {
+        if(moving){for(auto& s:smooth)s.getNextValue();if((i&15)==0)update();}
+        const double wet=active.getNextValue();double dry[2]{},equalized[2]{},inPower=0,outPower=0;
+        for(int c=0;c<channels;++c) {
+            double x=b.getSample(c,i);if(!std::isfinite(x))x=0;
+            auto ch=size_t(c);dryHistory[ch][size_t(historyIndex)]=x;dry[c]=dryHistory[ch][size_t((historyIndex-data.latency)&255)];
+            double y=attenGroup.tick(highGroup.tick(lowGroup.tick(x,c),c),c);
+            colourHistory[ch][size_t(historyIndex)]=y;y=0;
+            for(int k=0;k<data.kernelSize;++k)y+=data.kernel[k]*colourHistory[ch][size_t((historyIndex-k)&255)];
+            double hp=(1+hpPole)*.5*(y-hpInput[ch])+hpPole*hpOutput[ch];hpInput[ch]=y;hpOutput[ch]=hp;
+            equalized[c]=hp;inPower+=dry[c]*dry[c];outPower+=hp*hp;
+        }
+        historyIndex=(historyIndex+1)&255;
+        inputEnergy=energyPole*inputEnergy+(1-energyPole)*inPower;outputEnergy=energyPole*outputEnergy+(1-energyPole)*outPower;
+        double target=matchGain;if(inputEnergy>1e-12&&outputEnergy>1e-16)target=juce::jlimit(.0158489319,63.09573445,std::sqrt(inputEnergy/outputEnergy));
+        matchGain=gainPole*matchGain+(1-gainPole)*target;double compensation=1+fixBlend.getNextValue()*(matchGain-1);
+        for(int c=0;c<channels;++c)b.setSample(c,i,float(dry[c]+wet*(equalized[c]*compensation-dry[c])));
+    }
+    if(moving)update();
+}
+void EQP1AProcessor::processBlock(juce::AudioBuffer<float>& b,juce::MidiBuffer&){processAudio(b,false);}
+void EQP1AProcessor::processBlockBypassed(juce::AudioBuffer<float>& b,juce::MidiBuffer&){processAudio(b,true);}
 juce::AudioProcessorParameter* EQP1AProcessor::getBypassParameter()const{return apvts.getParameter("bypass");}
 void EQP1AProcessor::getStateInformation(juce::MemoryBlock& b){auto state=apvts.copyState();auto xml=state.createXml();copyXmlToBinary(*xml,b);}
 void EQP1AProcessor::setStateInformation(const void* d,int n){if(auto xml=getXmlFromBinary(d,n))if(xml->hasTagName(apvts.state.getType())){auto state=juce::ValueTree::fromXml(*xml);apvts.replaceState(state);}}
