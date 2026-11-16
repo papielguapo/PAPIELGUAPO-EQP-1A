@@ -18,7 +18,7 @@ public:
     juce::AudioProcessorParameter* getBypassParameter() const override;
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
-    const juce::String getName() const override { return "EQP-1A"; }
+    const juce::String getName() const override { return "PAPIELGUAPO - EQP-1A"; }
     bool acceptsMidi() const override { return false; }
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
@@ -72,3 +72,4 @@ private:
     void processAudio(juce::AudioBuffer<float>&,bool);
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EQP1AProcessor)
 };
+

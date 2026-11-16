@@ -21,7 +21,7 @@ juce_add_plugin(EQP1A
     IS_MIDI_EFFECT FALSE EDITOR_WANTS_KEYBOARD_FOCUS FALSE
     COPY_PLUGIN_AFTER_BUILD ${EQP1A_COPY_PLUGIN_AFTER_BUILD}
     PLUGIN_MANUFACTURER_CODE Papi PLUGIN_CODE Pq1A
-    FORMATS VST3 Standalone PRODUCT_NAME "EQP-1A")
+    FORMATS VST3 Standalone PRODUCT_NAME "PAPIELGUAPO - EQP-1A")
 target_sources(EQP1A PRIVATE Source/PluginProcessor.h Source/PluginProcessor.cpp Source/PluginEditor.h Source/PluginEditor.cpp)
 target_compile_definitions(EQP1A PUBLIC JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0)
 target_link_libraries(EQP1A PRIVATE juce::juce_audio_utils PUBLIC juce::juce_recommended_config_flags juce::juce_recommended_warning_flags)
@@ -36,3 +36,4 @@ if(EQP1A_BUILD_TESTS)
  add_executable(EQP1AInteractionMathTests Tests/InteractionMathTests.cpp)
  add_test(NAME InteractionMath COMMAND EQP1AInteractionMathTests)
 endif()
+

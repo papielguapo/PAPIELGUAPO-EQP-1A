@@ -69,4 +69,5 @@ ctest --test-dir build -C Release --output-on-failure
 
 Código AGPL-3.0. Dependencias bajo sus propias licencias. Implementación independiente, sin código ni binarios de UAD. Referencia de controles: [manual de Universal Audio](https://help.uaudio.com/hc/en-us/articles/7183176266260-Pultec-Passive-EQ-Collection-Manual).
 
-Archivos distribuidos: `PAPIELGUAPO - EQP-1A.vst3` y `PAPIELGUAPO - EQP-1A.exe`. Se conserva la identidad interna del plugin para compatibilidad con sesiones.
+Archivos distribuidos: `PAPIELGUAPO - EQP-1A.vst3` y `PAPIELGUAPO - EQP-1A.exe`. El DAW muestra PAPIELGUAPO - EQP-1A. Se conservan los identificadores del plugin y de sus parámetros para compatibilidad con sesiones.
+
